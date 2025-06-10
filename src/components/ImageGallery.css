@@ -1,0 +1,21 @@
+.gallery {
+  display: grid;
+  max-width: calc(100vw - 48px);
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-gap: 24px;
+  margin: 24px auto;
+  padding: 0;
+  list-style: none;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+} 
