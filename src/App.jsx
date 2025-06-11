@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { Component } from 'react'
 import axios from 'axios'
 import { Searchbar } from './components/Searchbar'
 import { ImageGallery } from './components/ImageGallery'
@@ -10,20 +10,20 @@ import './App.css'
 const API_KEY = '50726677-c3a3868cdb863e7d831aff00a'
 const BASE_URL = 'https://pixabay.com/api/'
 
-function App() {
-  const [images, setImages] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [page, setPage] = useState(1)
-  const [query, setQuery] = useState('')
-  const [showModal, setShowModal] = useState(false)
-  const [selectedImage, setSelectedImage] = useState(null)
-  const [hasMore, setHasMore] = useState(true)
+class App extends Component {
+  state = {
+    images: [],
+    loading: false,
+    error: null,
+    page: 1,
+    query: '',
+    showModal: false,
+    selectedImage: null,
+  }
 
-  const fetchImages = async (searchQuery, pageNum) => {
+  fetchImages = async (searchQuery, pageNum) => {
     try {
-      setLoading(true)
-      setError(null)
+      this.setState({ loading: true, error: null })
       
       const response = await axios.get(BASE_URL, {
         params: {
@@ -37,70 +37,77 @@ function App() {
       })
 
       const newImages = response.data.hits
-      setHasMore(newImages.length === 12)
       
-      if (pageNum === 1) {
-        setImages(newImages)
-      } else {
-        setImages(prevImages => [...prevImages, ...newImages])
-      }
+      this.setState(prevState => ({
+        images: pageNum === 1 ? newImages : [...prevState.images, ...newImages],
+        loading: false,
+      }))
     } catch (err) {
-      setError('Failed to fetch images. Please try again.')
-      console.error('Error fetching images:', err)
-    } finally {
-      setLoading(false)
+      this.setState({
+        error: 'Ошибка при загрузке изображений',
+        loading: false,
+      })
+      console.error('Ошибка:', err)
     }
   }
 
-  const handleSearch = (searchQuery) => {
-    setQuery(searchQuery)
-    setPage(1)
-    fetchImages(searchQuery, 1)
+  handleSearch = (searchQuery) => {
+    this.setState({ query: searchQuery, page: 1 })
+    this.fetchImages(searchQuery, 1)
   }
 
-  const handleLoadMore = () => {
+  handleLoadMore = () => {
+    const { query, page } = this.state
     const nextPage = page + 1
-    setPage(nextPage)
-    fetchImages(query, nextPage)
+    this.setState({ page: nextPage })
+    this.fetchImages(query, nextPage)
   }
 
-  const handleImageClick = (largeImageURL) => {
-    setSelectedImage(largeImageURL)
-    setShowModal(true)
+  handleImageClick = (largeImageURL) => {
+    this.setState({
+      selectedImage: largeImageURL,
+      showModal: true,
+    })
   }
 
-  const handleCloseModal = () => {
-    setShowModal(false)
-    setSelectedImage(null)
+  handleCloseModal = () => {
+    this.setState({
+      showModal: false,
+      selectedImage: null,
+    })
   }
 
-  return (
-    <div className="app">
-      <Searchbar onSubmit={handleSearch} />
-      
-      {error && <p className="error">{error}</p>}
-      
-      {images.length > 0 && (
-        <ImageGallery
-          images={images}
-          onImageClick={handleImageClick}
-        />
-      )}
-      
-      {loading && <Loader />}
-      
-      {images.length > 0 && hasMore && !loading && (
-        <Button onClick={handleLoadMore} />
-      )}
-      
-      {showModal && (
-        <Modal
-          largeImageURL={selectedImage}
-          onClose={handleCloseModal}
-        />
-      )}
-    </div>
-  )
+  render() {
+    const { images, loading, error, showModal, selectedImage } = this.state
+
+    return (
+      <div className="app">
+        <Searchbar onSubmit={this.handleSearch} />
+        
+        {error && <p className="error">{error}</p>}
+        
+        {images.length > 0 && (
+          <ImageGallery
+            images={images}
+            onImageClick={this.handleImageClick}
+          />
+        )}
+        
+        {loading && <Loader />}
+        
+        {images.length > 0 && !loading && (
+          <Button onClick={this.handleLoadMore} />
+        )}
+        
+        {showModal && (
+          <Modal
+            largeImageURL={selectedImage}
+            onClose={this.handleCloseModal}
+          />
+        )}
+      </div>
+    )
+  }
 }
 
 export default App
